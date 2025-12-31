@@ -1,36 +1,41 @@
-from flask import Flask, request, jsonify
-from PIL import Image, ImageEnhance
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+from PIL import Image
 import base64, io
 
 app = Flask(__name__)
+CORS(app)
+
 last_frame = None
 GRID = 32
+
+@app.route("/")
+def home():
+    return render_template("camera.html")
 
 @app.route("/camera", methods=["POST"])
 def camera():
     global last_frame
+    try:
+        print("FRAME RECEBIDO")
+        img_data = base64.b64decode(request.json["image"])
+        img = Image.open(io.BytesIO(img_data)).convert("L")
+        img = img.resize((GRID, GRID))
+        pixels = list(img.getdata())
 
-    img_data = base64.b64decode(request.json["image"])
-    img = Image.open(io.BytesIO(img_data)).convert("RGB")
+        fixed = []
+        for v in pixels:
+            if v < 20:
+                v = 20
+            fixed.append(v)
 
-    img = img.resize((GRID, GRID))
-    img = ImageEnhance.Contrast(img).enhance(2.0)
-    img = ImageEnhance.Brightness(img).enhance(1.2)
+        last_frame = fixed
+        return jsonify({"ok": True})
+    except Exception as e:
+        print("ERRO:", e)
+        return jsonify({"error": str(e)}), 400
 
-    gray = img.convert("L")
-    pixels = list(gray.getdata())
-
-    fixed = []
-    for v in pixels:
-        v = int((v / 255) ** 0.8 * 255)
-        if v < 20:
-            v = 20
-        fixed.append(v)
-
-    last_frame = fixed
-    return jsonify({"ok": True})
-
-@app.route("/cameraGet", methods=["GET"])
+@app.route("/cameraGet")
 def camera_get():
     if last_frame is None:
         return jsonify({"ready": False})
