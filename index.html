@@ -13,7 +13,9 @@ navigator.mediaDevices.getUserMedia({video:true})
 .then(s=>v.srcObject=s)
 
 setInterval(()=>{
-  x.drawImage(v,0,0,32,32)
+x.filter = "contrast(140%) brightness(110%)"
+x.drawImage(v,0,0,32,32)
+x.filter = "none"
   const img = c.toDataURL("image/jpeg").split(",")[1]
   fetch("https://camera-voxel-roblox.onrender.com/camera",{
     method:"POST",
