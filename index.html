@@ -15,7 +15,7 @@ navigator.mediaDevices.getUserMedia({video:true})
 setInterval(()=>{
   x.drawImage(v,0,0,32,32)
   const img = c.toDataURL("image/jpeg").split(",")[1]
-  fetch("/camera",{
+  fetch("https://camera-voxel-roblox.onrender.com/camera",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({image:img})
