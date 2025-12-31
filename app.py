@@ -20,6 +20,7 @@ def camera():
 
 @app.route("/cameraGet", methods=["GET"])
 def camera_get():
+    global last_frame
     if last_frame is None:
         return jsonify({"ready": False})
 
