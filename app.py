@@ -18,7 +18,7 @@ def camera():
     global last_frame
 
     img_data = base64.b64decode(request.json["image"])
-    img = Image.open(io.BytesIO(img_data)).convert("L")
+    img = Image.open(io.BytesIO(img_data)).convert("RGB")
     img = img.resize((GRID, GRID))
 
     last_frame = list(img.getdata())
