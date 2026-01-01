@@ -36,7 +36,7 @@ navigator.mediaDevices.getUserMedia({video:true})
 
 setInterval(() => {
   ctx.drawImage(v, 0, 0, 64, 64)
-  const img = c.toDataURL("image/jpeg", 0.5).split(",")[1]
+  const img = c.toDataURL("image/jpeg", 0.6).split(",")[1]
 
   fetch("/camera", {
     method:"POST",
