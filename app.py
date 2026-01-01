@@ -17,11 +17,23 @@ def home():
 def camera():
     global last_frame
 
+    mode = request.json.get("mode", "color")
     raw = base64.b64decode(request.json["image"])
+
     img = Image.open(io.BytesIO(raw)).convert("RGB")
     img = img.resize((GRID, GRID), Image.BILINEAR)
 
-    last_frame = list(img.getdata())
+    pixels = list(img.getdata())
+
+    if mode == "bw":
+        bw_pixels = []
+        for r, g, b in pixels:
+            l = int((r * 0.299) + (g * 0.587) + (b * 0.114))
+            bw_pixels.append((l, l, l))
+        last_frame = bw_pixels
+    else:
+        last_frame = pixels
+
     return jsonify(ok=True)
 
 @app.route("/cameraGet")
