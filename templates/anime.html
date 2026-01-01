@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html>
 <body style="margin:0;background:black">
-<video id="v" autoplay muted playsinline></video>
+<video id="v" autoplay muted playsinline crossorigin="anonymous"></video>
 <canvas id="c" width="96" height="96" hidden></canvas>
 
 <script>
-const v=document.getElementById("v")
-const c=document.getElementById("c")
-const x=c.getContext("2d")
+const v = document.getElementById("v")
+const c = document.getElementById("c")
+const x = c.getContext("2d")
 
-v.src="https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/5f12136385bccc00070142ed/master.m3u8?advertisingId={PSID}&appVersion=unknown&deviceDNT={TARGETOPT}&deviceId={PSID}&deviceLat=0&deviceLon=0&deviceMake=samsung&deviceModel=samsung&deviceType=samsung-tvplus&deviceVersion=unknown"
+v.src = "https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/5f12136385bccc00070142ed/master.m3u8"
 
 setInterval(()=>{
-  if(v.videoWidth===0)return
+  if(v.videoWidth===0) return
   x.drawImage(v,0,0,96,96)
-  fetch("/camera",{
+  fetch("/animeFrame",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({
       image:c.toDataURL("image/jpeg",0.5).split(",")[1]
     })
