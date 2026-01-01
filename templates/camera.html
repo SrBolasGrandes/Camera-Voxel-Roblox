@@ -24,19 +24,22 @@ body {
   height:320px;
   image-rendering: pixelated;
   border:2px solid white;
+  background:black;
 }
 
 button {
   margin-top:10px;
-  padding:6px 12px;
+  padding:8px 16px;
 }
 </style>
 </head>
 <body>
 
 <canvas id="view" width="96" height="96"></canvas>
-<div id="status">😐</div>
-<button id="modeBtn">Modo: COLOR</button>
+<div id="status">⏸️ Câmera parada</div>
+
+<button id="startBtn">▶ Iniciar câmera</button>
+<button id="modeBtn" disabled>Modo: COLOR</button>
 
 <video id="video" autoplay muted playsinline hidden></video>
 <canvas id="send" width="96" height="96" hidden></canvas>
@@ -49,9 +52,11 @@ const send = document.getElementById("send")
 const sctx = send.getContext("2d")
 const status = document.getElementById("status")
 const modeBtn = document.getElementById("modeBtn")
+const startBtn = document.getElementById("startBtn")
 
 let smiling = false
 let mode = "color"
+let started = false
 
 modeBtn.onclick = () => {
   mode = mode === "color" ? "bw" : "color"
@@ -61,7 +66,6 @@ modeBtn.onclick = () => {
 const faceMesh = new FaceMesh({
   locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
 })
-
 faceMesh.setOptions({ maxNumFaces:1 })
 
 faceMesh.onResults(r => {
@@ -72,18 +76,28 @@ faceMesh.onResults(r => {
     const o = Math.abs(lm[13].y - lm[14].y)
     if (o > w * 0.25) smiling = true
   }
-  status.innerText = smiling ? "😄 SORRINDO" : "😐"
+  status.innerText = smiling ? "😄 SORRINDO" : "😐 Sem sorriso"
 })
 
-navigator.mediaDevices.getUserMedia({ video:true }).then(stream => {
+startBtn.onclick = async () => {
+  if (started) return
+  started = true
+
+  const stream = await navigator.mediaDevices.getUserMedia({ video:true })
   video.srcObject = stream
+
   const cam = new Camera(video,{
     onFrame: async ()=> await faceMesh.send({image:video})
   })
   cam.start()
-})
+
+  startBtn.style.display = "none"
+  modeBtn.disabled = false
+}
 
 setInterval(()=>{
+  if (!started) return
+
   vctx.drawImage(video,0,0,96,96)
   sctx.drawImage(video,0,0,96,96)
 
