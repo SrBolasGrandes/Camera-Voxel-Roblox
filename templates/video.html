@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Video Voxel</title>
+
+<style>
+body {
+  margin:0;
+  background:black;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+video {
+  width:320px;
+  border:2px solid white;
+}
+button {
+  margin-top:8px;
+}
+</style>
+</head>
+<body>
+
+<video id="vid" controls></video>
+<input type="file" id="file" accept="video/*">
+<button id="play">▶ Play</button>
+<button id="pause">⏸ Pause</button>
+
+<canvas id="c" width="96" height="96" hidden></canvas>
+
+<script>
+const vid = document.getElementById("vid")
+const file = document.getElementById("file")
+const canvas = document.getElementById("c")
+const ctx = canvas.getContext("2d")
+
+file.onchange = () => {
+  const f = file.files[0]
+  const fd = new FormData()
+  fd.append("video", f)
+  fetch("/upload", { method:"POST", body:fd })
+}
+
+document.getElementById("play").onclick = ()=> vid.play()
+document.getElementById("pause").onclick = ()=> vid.pause()
+
+setInterval(()=>{
+  if (vid.paused || vid.ended) return
+
+  ctx.drawImage(vid,0,0,96,96)
+  const img = canvas.toDataURL("image/jpeg",0.5).split(",")[1]
+
+  fetch("/camera",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      image: img,
+      mode: "color",
+      source: "video"
+    })
+  })
+},50)
+</script>
+
+</body>
+</html>
