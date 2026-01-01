@@ -21,7 +21,7 @@ video {
 <body>
 
 <video id="v" autoplay playsinline muted></video>
-<canvas id="c" width="64" height="64" hidden></canvas>
+<canvas id="c" width="96" height="96" hidden></canvas>
 
 <script>
 const v = document.getElementById("v")
@@ -35,7 +35,7 @@ navigator.mediaDevices.getUserMedia({video:true})
 })
 
 setInterval(() => {
-  ctx.drawImage(v, 0, 0, 64, 64)
+  ctx.drawImage(v, 0, 0, 96, 96)
   const img = c.toDataURL("image/jpeg", 0.6).split(",")[1]
 
   fetch("/camera", {
@@ -43,7 +43,7 @@ setInterval(() => {
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ image: img })
   })
-}, 300)
+}, 100)
 </script>
 
 </body>
