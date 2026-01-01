@@ -15,7 +15,7 @@ current_audio = None
 
 GITHUB_USER = "SrBolasGrandes"
 REPO = "Camera-Voxel-Roblox"
-MEDIA_PATH = "media"
+MEDIA_PATH = "videos"
 
 FALLBACK = "https://raw.githubusercontent.com/SrBolasGrandes/Camera-Voxel-Roblox/refs/heads/main/262%20Sem%20T%C3%ADtulo_20260101105003.png"
 
