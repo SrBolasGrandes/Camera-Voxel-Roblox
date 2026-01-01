@@ -37,11 +37,17 @@ def video_page():
 @app.route("/videosList")
 def videos_list():
     url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{MEDIA_PATH}"
-    r = requests.get(url).json()
+    r = requests.get(url)
 
+    if r.status_code != 200:
+        return jsonify([])
+
+    files = r.json()
     videos = []
-    for f in r:
-        if f["name"].endswith(".mp4"):
+
+    for f in files:
+        name = f.get("name","").lower()
+        if name.endswith(".mp4"):
             videos.append({
                 "name": f["name"],
                 "url": f["download_url"]
