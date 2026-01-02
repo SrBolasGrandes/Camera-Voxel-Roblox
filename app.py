@@ -1,73 +1,87 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from PIL import Image
-import base64, io, time, requests, threading
+import base64, io, time, requests
 
 app = Flask(__name__)
 CORS(app)
 
-GRID = 64
-FPS = 10
-TIMEOUT = 5
+GRID = 96
+TIMEOUT = 3
 
-camera_frame = None
-anime_frame = None
-camera_time = 0
-anime_time = 0
+last_frame = None
+last_time = 0
+current_audio = None
 
-fallback_pixels = None
+GITHUB_USER = "SrBolasGrandes"
+REPO = "Camera-Voxel-Roblox"
+MEDIA_PATH = "videos"
 
-FALLBACK_IMG = "https://raw.githubusercontent.com/SrBolasGrandes/Camera-Voxel-Roblox/main/262%20Sem%20T%C3%ADtulo_20260101105003.png"
+FALLBACK_IMAGE = "https://raw.githubusercontent.com/SrBolasGrandes/Camera-Voxel-Roblox/refs/heads/main/262%20Sem%20T%C3%ADtulo_20260101105003.png"
 
-def img_to_pixels(img):
-    img = img.resize((GRID, GRID))
-    return list(img.getdata())
-
-def load_fallback_once():
-    global fallback_pixels
-    r = requests.get(FALLBACK_IMG, timeout=10)
+def load_fallback():
+    global last_frame
+    r = requests.get(FALLBACK_IMAGE)
     img = Image.open(io.BytesIO(r.content)).convert("RGB")
-    fallback_pixels = img_to_pixels(img)
-
-load_fallback_once()
+    img = img.resize((GRID, GRID))
+    last_frame = list(img.getdata())
 
 @app.route("/")
 def camera_page():
     return render_template("camera.html")
 
-@app.route("/anime")
-def anime_page():
-    return render_template("anime.html")
+@app.route("/video")
+def video_page():
+    return render_template("video.html")
+
+@app.route("/videosList")
+def videos_list():
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{MEDIA_PATH}"
+    r = requests.get(url).json()
+
+    videos = []
+    for f in r:
+        if f["name"].lower().endswith(".mp4"):
+            videos.append({
+                "name": f["name"],
+                "url": f["download_url"]
+            })
+
+    return jsonify(videos)
 
 @app.route("/camera", methods=["POST"])
-def camera_post():
-    global camera_frame, camera_time
-    raw = base64.b64decode(request.json["image"])
-    img = Image.open(io.BytesIO(raw)).convert("RGB")
-    camera_frame = img_to_pixels(img)
-    camera_time = time.time()
-    return jsonify(ok=True)
+def camera():
+    global last_frame, last_time
 
-@app.route("/animeFrame", methods=["POST"])
-def anime_post():
-    global anime_frame, anime_time
     raw = base64.b64decode(request.json["image"])
     img = Image.open(io.BytesIO(raw)).convert("RGB")
-    anime_frame = img_to_pixels(img)
-    anime_time = time.time()
+    img = img.resize((GRID, GRID))
+
+    last_frame = list(img.getdata())
+    last_time = time.time()
+
     return jsonify(ok=True)
 
 @app.route("/cameraGet")
 def camera_get():
-    if camera_frame and time.time() - camera_time < TIMEOUT:
-        return jsonify(size=GRID, data=camera_frame)
-    return jsonify(size=GRID, data=fallback_pixels)
+    if last_frame is None or time.time() - last_time > TIMEOUT:
+        load_fallback()
 
-@app.route("/animeGet")
-def anime_get():
-    if anime_frame and time.time() - anime_time < TIMEOUT:
-        return jsonify(size=GRID, data=anime_frame)
-    return jsonify(size=GRID, data=fallback_pixels)
+    return jsonify(
+        ready=True,
+        size=GRID,
+        data=last_frame
+    )
+
+@app.route("/setAudio", methods=["POST"])
+def set_audio():
+    global current_audio
+    current_audio = request.json["audio"]
+    return jsonify(ok=True)
+
+@app.route("/audioGet")
+def audio_get():
+    return jsonify(audio=current_audio)
 
 if __name__ == "__main__":
     app.run()
