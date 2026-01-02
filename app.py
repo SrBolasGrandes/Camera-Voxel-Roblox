@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 GRID = 96
-TIMEOUT = 3
+TIMEOUT = 1
 
 last_frame = None
 last_time = 0
