@@ -6,7 +6,7 @@ import base64, io, time, requests
 app = Flask(__name__)
 CORS(app)
 
-GRID = 256
+GRID = 128
 TIMEOUT = 3
 
 last_frame = None
