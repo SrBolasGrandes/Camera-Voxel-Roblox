@@ -1,87 +1,76 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify
 from PIL import Image
-import base64, io, time, requests
+import cv2
+import os
+import io
+import time
 
 app = Flask(__name__)
-CORS(app)
 
-GRID = 96
-TIMEOUT = 1
+FRAME = []
+READY = False
 
-last_frame = None
-last_time = 0
-current_audio = None
+SIZE = 96
+VIDEO_CAP = None
 
-GITHUB_USER = "SrBolasGrandes"
-REPO = "Camera-Voxel-Roblox"
-MEDIA_PATH = "videos"
-
-FALLBACK_IMAGE = "https://raw.githubusercontent.com/SrBolasGrandes/Camera-Voxel-Roblox/refs/heads/main/262%20Sem%20T%C3%ADtulo_20260101105003.png"
-
-def load_fallback():
-    global last_frame
-    r = requests.get(FALLBACK_IMAGE)
-    img = Image.open(io.BytesIO(r.content)).convert("RGB")
-    img = img.resize((GRID, GRID))
-    last_frame = list(img.getdata())
-
-@app.route("/")
-def camera_page():
-    return render_template("camera.html")
-
-@app.route("/video")
-def video_page():
-    return render_template("video.html")
-
-@app.route("/videosList")
-def videos_list():
-    url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{MEDIA_PATH}"
-    r = requests.get(url).json()
-
-    videos = []
-    for f in r:
-        if f["name"].lower().endswith(".mp4"):
-            videos.append({
-                "name": f["name"],
-                "url": f["download_url"]
-            })
-
-    return jsonify(videos)
-
-@app.route("/camera", methods=["POST"])
-def camera():
-    global last_frame, last_time
-
-    raw = base64.b64decode(request.json["image"])
-    img = Image.open(io.BytesIO(raw)).convert("RGB")
-    img = img.resize((GRID, GRID))
-
-    last_frame = list(img.getdata())
-    last_time = time.time()
-
-    return jsonify(ok=True)
+def img_to_pixels(img):
+    img = img.resize((SIZE, SIZE)).convert("RGB")
+    data = []
+    for y in range(SIZE):
+        for x in range(SIZE):
+            r,g,b = img.getpixel((x,y))
+            data.append([r,g,b])
+    return data
 
 @app.route("/cameraGet")
 def camera_get():
-    if last_frame is None or time.time() - last_time > TIMEOUT:
-        load_fallback()
+    return jsonify({"ready": READY, "data": FRAME})
 
-    return jsonify(
-        ready=True,
-        size=GRID,
-        data=last_frame
-    )
+@app.route("/camera")
+def camera():
+    return render_template("camera.html")
 
-@app.route("/setAudio", methods=["POST"])
-def set_audio():
-    global current_audio
-    current_audio = request.json["audio"]
-    return jsonify(ok=True)
+@app.route("/cameraSend", methods=["POST"])
+def camera_send():
+    global FRAME, READY
+    img = Image.open(io.BytesIO(request.data))
+    FRAME = img_to_pixels(img)
+    READY = True
+    return "ok"
 
-@app.route("/audioGet")
-def audio_get():
-    return jsonify(audio=current_audio)
+@app.route("/foto")
+def foto():
+    return render_template("foto.html")
+
+@app.route("/fotoSend", methods=["POST"])
+def foto_send():
+    global FRAME, READY
+    img = Image.open(request.files["image"].stream)
+    FRAME = img_to_pixels(img)
+    READY = True
+    return "ok"
+
+@app.route("/video")
+def video():
+    files = [f for f in os.listdir("videos") if f.endswith(".mp4")]
+    return render_template("video.html", videos=files)
+
+@app.route("/videoPlay", methods=["POST"])
+def video_play():
+    global VIDEO_CAP
+    VIDEO_CAP = cv2.VideoCapture("videos/" + request.json["name"])
+    return "ok"
+
+@app.route("/videoFrame")
+def video_frame():
+    global FRAME, READY, VIDEO_CAP
+    if VIDEO_CAP:
+        ok, frame = VIDEO_CAP.read()
+        if ok:
+            img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            FRAME = img_to_pixels(img)
+            READY = True
+    return "ok"
 
 if __name__ == "__main__":
     app.run()
