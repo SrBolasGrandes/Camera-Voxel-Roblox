@@ -1,7 +1,36 @@
 <!DOCTYPE html>
 <html>
 <body>
-<video autoplay playsinline></video>
-<script src="/static/camera.js"></script>
+<select id="mode">
+<option value="color">Color</option>
+<option value="bw">Preto e Branco</option>
+</select>
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas" width="96" height="96" style="display:none"></canvas>
+
+<script>
+const video = document.getElementById("video")
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+
+navigator.mediaDevices.getUserMedia({video:true}).then(s=>{
+    video.srcObject = s
+})
+
+document.getElementById("mode").onchange = e=>{
+    fetch("/setMode",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({mode:e.target.value})
+    })
+}
+
+setInterval(()=>{
+    ctx.drawImage(video,0,0,96,96)
+    canvas.toBlob(b=>{
+        fetch("/pushFrame",{method:"POST",body:b})
+    },"image/jpeg")
+},50)
+</script>
 </body>
 </html>
