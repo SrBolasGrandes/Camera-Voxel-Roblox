@@ -5,47 +5,78 @@
 <title>Camera</title>
 <style>
 body {
-  margin:0;
-  background:black;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
+  margin: 0;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 12px;
 }
+
 video {
-  width:320px;
-  border:2px solid white;
+  width: 320px;
+  border: 2px solid white;
+}
+
+form {
+  margin-top: 10px;
+}
+
+input, button {
+  background: black;
+  color: white;
+  border: 1px solid white;
+  padding: 6px;
 }
 </style>
 </head>
+
 <body>
 
 <video id="v" autoplay playsinline></video>
 <canvas id="c" width="64" height="64" hidden></canvas>
+
+<!-- 🔥 UPLOAD DE FOTO -->
+<form id="fotoForm" enctype="multipart/form-data">
+  <input type="file" name="image" accept="image/*">
+  <button type="submit">Enviar foto</button>
+</form>
 
 <script>
 const video = document.getElementById("v")
 const canvas = document.getElementById("c")
 const ctx = canvas.getContext("2d")
 
+// CAMERA
 navigator.mediaDevices.getUserMedia({ video:true })
 .then(stream => video.srcObject = stream)
-  
-<form action="/foto" method="post" enctype="multipart/form-data">
-  <input type="file" name="image">
-  <button type="submit">Enviar foto</button>
-</form>
 
+// ENVIO CONTÍNUO DA CÂMERA
 setInterval(()=>{
-  ctx.drawImage(video,0,0,64,64)
-  fetch("/camera",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
+  ctx.drawImage(video, 0, 0, 64, 64)
+
+  fetch("/camera", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      image: canvas.toDataURL("image/jpeg",0.5).split(",")[1]
+      image: canvas.toDataURL("image/jpeg", 0.5).split(",")[1]
     })
   })
-},50)
+}, 50)
+
+// UPLOAD DE FOTO
+document.getElementById("fotoForm").addEventListener("submit", e => {
+  e.preventDefault()
+
+  const formData = new FormData(e.target)
+
+  fetch("/foto", {
+    method: "POST",
+    body: formData
+  })
+})
 </script>
 
 </body>
