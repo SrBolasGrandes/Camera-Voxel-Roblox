@@ -62,6 +62,25 @@ def camera():
 
     return jsonify(ok=True)
 
+# ================== NOVO: /foto ==================
+# NÃO altera nada do sistema antigo
+# Apenas injeta a imagem no mesmo buffer do cameraGet
+@app.route("/foto", methods=["POST"])
+def foto():
+    global last_frame, last_time
+
+    if "image" not in request.files:
+        return jsonify(error="Nenhuma imagem enviada"), 400
+
+    img = Image.open(request.files["image"].stream).convert("RGB")
+    img = img.resize((GRID, GRID))
+
+    last_frame = list(img.getdata())
+    last_time = time.time()
+
+    return jsonify(ok=True)
+# =================================================
+
 @app.route("/cameraGet")
 def camera_get():
     if last_frame is None or time.time() - last_time > FPS_TIMEOUT:
